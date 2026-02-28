@@ -8,14 +8,13 @@ input: 视频文件 (*.mp4)
 output: subtitles_words.json、auto_selected.json、review.html
 pos: 转录+识别，到用户网页审核为止
 
-架构守护者：一旦我被修改，请同步更新：
-1. ../README.md 的 Skill 清单
-2. /CLAUDE.md 路由表
+原项目: https://github.com/Ceeon/videocut-skills (火山引擎版)
+本项目: 改用 fal.ai Wizper (Whisper v3 Large) 替代火山引擎
 -->
 
-# 剪口播 v2
+# 剪口播 v2 (fal.ai 版)
 
-> 火山引擎转录 + AI 口误识别 + 网页审核
+> fal.ai Wizper 转录 + AI 口误识别 + 网页审核
 
 ## 快速使用
 
@@ -32,7 +31,7 @@ output/
     ├── 剪口播/
     │   ├── 1_转录/
     │   │   ├── audio.mp3
-    │   │   ├── volcengine_result.json
+    │   │   ├── fal_result.json
     │   │   └── subtitles_words.json
     │   ├── 2_分析/
     │   │   ├── readable.txt
@@ -55,7 +54,7 @@ output/
     ↓
 2. 上传获取公网 URL (uguu.se)
     ↓
-3. 火山引擎 API 转录
+3. fal.ai Wizper API 转录（字级别时间戳）
     ↓
 4. 生成字级别字幕 (subtitles_words.json)
     ↓
@@ -73,13 +72,11 @@ output/
 ### 步骤 0: 创建输出目录
 
 ```bash
-# 变量设置（根据实际视频调整）
 VIDEO_PATH="/path/to/视频.mp4"
 VIDEO_NAME=$(basename "$VIDEO_PATH" .mp4)
 DATE=$(date +%Y-%m-%d)
 BASE_DIR="output/${DATE}_${VIDEO_NAME}/剪口播"
 
-# 创建子目录
 mkdir -p "$BASE_DIR/1_转录" "$BASE_DIR/2_分析" "$BASE_DIR/3_审核"
 cd "$BASE_DIR"
 ```
@@ -89,23 +86,23 @@ cd "$BASE_DIR"
 ```bash
 cd 1_转录
 
-# 1. 提取音频（文件名有冒号需加 file: 前缀）
+# 1. 提取音频
 ffmpeg -i "file:$VIDEO_PATH" -vn -acodec libmp3lame -y audio.mp3
 
 # 2. 上传获取公网 URL
 curl -s -F "files[]=@audio.mp3" https://uguu.se/upload
 # 返回: {"success":true,"files":[{"url":"https://h.uguu.se/xxx.mp3"}]}
 
-# 3. 调用火山引擎 API
-SKILL_DIR="/Users/chengfeng/Desktop/AIos/剪辑Agent/.claude/skills/剪口播"
-"$SKILL_DIR/scripts/volcengine_transcribe.sh" "https://h.uguu.se/xxx.mp3"
-# 输出: volcengine_result.json
+# 3. 调用 fal.ai Wizper API
+SKILL_DIR="<skill安装路径>/剪口播"
+"$SKILL_DIR/scripts/fal_transcribe.sh" "https://h.uguu.se/xxx.mp3"
+# 输出: fal_result.json
 ```
 
 ### 步骤 4: 生成字幕
 
 ```bash
-node "$SKILL_DIR/scripts/generate_subtitles.js" volcengine_result.json
+node "$SKILL_DIR/scripts/generate_subtitles.js" fal_result.json
 # 输出: subtitles_words.json
 
 cd ..
@@ -180,8 +177,6 @@ console.log('≥0.5s静音数量:', selected.length);
 "
 ```
 
-→ 输出 `auto_selected.json`（只含静音 idx）
-
 #### 5.5 AI 分析口误（追加到 auto_selected.json）
 
 **检测规则（按优先级）**：
@@ -198,7 +193,7 @@ console.log('≥0.5s静音数量:', selected.length);
 
 **核心原则**：
 - **先分句，再比对**：用 sentences.txt 比对相邻句子
-- **整句删除**：残句、重复句都要删整句，不只是删异常的几个字
+- **整句删除**：残句、重复句都要删整句
 
 **分段分析（循环执行）**：
 
@@ -215,18 +210,6 @@ console.log('≥0.5s静音数量:', selected.length);
 ```
 readable.txt 格式: idx|内容|时间
                    ↑ 用这个值
-
-行号1500 → "1568|[静1.02s]|..."  ← idx是1568，不是1500！
-```
-
-**口误分析.md 格式：**
-
-```markdown
-## 第N段 (行号范围)
-
-| idx | 时间 | 类型 | 内容 | 处理 |
-|-----|------|------|------|------|
-| 65-75 | 15.80-17.66 | 重复句 | "这是我剪出来的一个案例" | 删 |
 ```
 
 ### 步骤 6-7: 审核
@@ -243,13 +226,6 @@ node "$SKILL_DIR/scripts/review_server.js" 8899 "$VIDEO_PATH"
 # 打开 http://localhost:8899
 ```
 
-用户在网页中：
-- 播放视频片段确认
-- 勾选/取消删除项
-- 点击「执行剪辑」
-
----
-
 ## 数据格式
 
 ### subtitles_words.json
@@ -264,17 +240,24 @@ node "$SKILL_DIR/scripts/review_server.js" 8899 "$VIDEO_PATH"
 ### auto_selected.json
 
 ```json
-[72, 85, 120]  // Claude 分析生成的预选索引
+[72, 85, 120]
 ```
-
----
 
 ## 配置
 
-### 火山引擎 API Key
+### fal.ai API Key
 
 ```bash
-cd /Users/chengfeng/Desktop/AIos/剪辑Agent/.claude/skills
 cp .env.example .env
-# 编辑 .env 填入 VOLCENGINE_API_KEY=xxx
+# 编辑 .env 填入 FAL_KEY=xxx
 ```
+
+获取 Key: https://fal.ai/dashboard/keys
+
+### 模型说明
+
+本项目使用 `fal-ai/wizper`（Whisper v3 Large 的 fal.ai 优化版）：
+- 支持 `chunk_level=word` 获取字级别时间戳
+- 支持中文（`language=zh`）
+- 异步队列模式，支持长音频
+- API 文档: https://fal.ai/models/fal-ai/wizper/api

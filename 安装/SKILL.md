@@ -3,16 +3,6 @@ name: videocut:安装
 description: 环境准备。安装依赖、配置 API Key、验证环境。触发词：安装、环境准备、初始化
 ---
 
-<!--
-input: 无
-output: 环境就绪
-pos: 前置 skill，首次使用前运行
-
-架构守护者：一旦我被修改，请同步更新：
-1. ../README.md 的 Skill 清单
-2. /CLAUDE.md 路由表
--->
-
 # 安装
 
 > 首次使用前的环境准备
@@ -31,22 +21,24 @@ pos: 前置 skill，首次使用前运行
 | Node.js | 运行脚本 | `brew install node` |
 | FFmpeg | 视频剪辑 | `brew install ffmpeg` |
 | curl | API 调用 | 系统自带 |
+| Python 3 | JSON 解析 | 系统自带 |
 
 ## API 配置
 
-### 火山引擎语音识别
+### fal.ai Wizper（语音转录）
 
-控制台：https://console.volcengine.com/speech/new/experience/asr?projectName=default
+控制台：https://fal.ai/dashboard/keys
 
-1. 注册火山引擎账号
-2. 开通语音识别服务
-3. 获取 API Key
+1. 注册 fal.ai 账号
+2. 获取 API Key
+3. 无需额外开通服务，按使用量计费
 
-配置到项目目录 `.claude/skills/.env`：
+配置到项目 `.env`：
 
 ```bash
-# 文件路径：剪辑Agent/.claude/skills/.env
-VOLCENGINE_API_KEY=your_api_key_here
+cp .env.example .env
+# 编辑 .env 填入:
+FAL_KEY=your_fal_key_here
 ```
 
 ## 安装流程
@@ -54,7 +46,7 @@ VOLCENGINE_API_KEY=your_api_key_here
 ```
 1. 安装 Node.js + FFmpeg
        ↓
-2. 配置火山引擎 API Key
+2. 配置 fal.ai API Key
        ↓
 3. 验证环境
 ```
@@ -70,45 +62,35 @@ brew install node ffmpeg
 # 验证
 node -v
 ffmpeg -version
+python3 --version
 ```
 
 ### 2. 配置 API Key
 
 ```bash
-# 在项目 .claude/skills/ 目录下创建 .env 文件
-echo "VOLCENGINE_API_KEY=your_key" >> .claude/skills/.env
+cp .env.example .env
+# 编辑 .env 填入 FAL_KEY
 ```
 
 ### 3. 验证环境
 
 ```bash
-# 检查 Node.js
 node -v
-
-# 检查 FFmpeg
 ffmpeg -version
-
-# 检查 API Key（在项目目录下执行）
-cat .claude/skills/.env | grep VOLCENGINE
+cat .env | grep FAL_KEY
 ```
 
 ## 常见问题
 
 ### Q1: API Key 在哪获取？
 
-火山引擎控制台 → 语音技术 → 语音识别 → API Key
+fal.ai 控制台 → Dashboard → Keys → Create Key
 
-### Q2: ffmpeg 命令找不到
+### Q2: 支持哪些音频格式？
 
-```bash
-which ffmpeg  # 应该输出路径
-# 如果没有，重新安装：brew install ffmpeg
-```
+fal.ai Wizper 支持: mp3, mp4, mpeg, mpga, m4a, wav, webm
 
-### Q3: 文件名含冒号报错
+### Q3: 费用如何？
 
-FFmpeg 命令需加 `file:` 前缀：
-
-```bash
-ffmpeg -i "file:2026:01:26 task.mp4" ...
-```
+fal.ai 按使用量计费，Wizper 模型价格参见:
+https://fal.ai/models/fal-ai/wizper

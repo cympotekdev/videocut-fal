@@ -1,14 +1,24 @@
 #!/usr/bin/env node
 /**
- * 从火山引擎结果生成字级别字幕
+ * 从 fal.ai Wizper 结果生成字级别字幕
  *
- * 用法: node generate_subtitles.js <volcengine_result.json> [delete_segments.json]
+ * fal.ai Wizper 输出格式 (chunk_level=word):
+ * {
+ *   "text": "全文",
+ *   "chunks": [
+ *     { "text": "你", "timestamp": [0.0, 0.2] },
+ *     { "text": "好", "timestamp": [0.2, 0.4] },
+ *     ...
+ *   ]
+ * }
+ *
+ * 用法: node generate_subtitles.js <fal_result.json> [delete_segments.json]
  * 输出: subtitles_words.json
  */
 
 const fs = require('fs');
 
-const resultFile = process.argv[2] || 'volcengine_result.json';
+const resultFile = process.argv[2] || 'fal_result.json';
 const deleteFile = process.argv[3];
 
 if (!fs.existsSync(resultFile)) {
@@ -18,16 +28,30 @@ if (!fs.existsSync(resultFile)) {
 
 const result = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
 
-// 提取所有字
+// 从 fal.ai Wizper 格式提取字级别数据
 const allWords = [];
-for (const utterance of result.utterances) {
-  if (utterance.words) {
-    for (const word of utterance.words) {
+
+if (result.chunks && Array.isArray(result.chunks)) {
+  for (const chunk of result.chunks) {
+    if (chunk.timestamp && chunk.text) {
       allWords.push({
-        text: word.text,
-        start: word.start_time / 1000,
-        end: word.end_time / 1000
+        text: chunk.text.trim(),
+        start: chunk.timestamp[0],
+        end: chunk.timestamp[1]
       });
+    }
+  }
+} else if (result.utterances) {
+  // 兼容火山引擎格式（向后兼容）
+  for (const utterance of result.utterances) {
+    if (utterance.words) {
+      for (const word of utterance.words) {
+        allWords.push({
+          text: word.text,
+          start: word.start_time / 1000,
+          end: word.end_time / 1000
+        });
+      }
     }
   }
 }
@@ -82,7 +106,6 @@ for (const word of outputWords) {
   const gapDuration = word.start - lastEnd;
 
   if (gapDuration > 0.1) {
-    // 如果静音 >0.5秒，按1秒拆分
     if (gapDuration > 0.5) {
       let gapStart = lastEnd;
       while (gapStart < word.start) {
@@ -96,7 +119,6 @@ for (const word of outputWords) {
         gapStart = gapEnd;
       }
     } else {
-      // <1秒的静音保持原样
       wordsWithGaps.push({
         text: '',
         start: Math.round(lastEnd * 100) / 100,
