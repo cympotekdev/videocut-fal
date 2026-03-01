@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * 从 fal.ai Wizper 结果生成字级别字幕
+ * 从 fal.ai Whisper 结果生成字级别字幕
  *
- * fal.ai Wizper 输出格式 (chunk_level=word):
+ * fal.ai Whisper 输出格式 (chunk_level=word):
  * {
  *   "text": "全文",
  *   "chunks": [
@@ -28,7 +28,7 @@ if (!fs.existsSync(resultFile)) {
 
 const result = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
 
-// 从 fal.ai Wizper 格式提取字级别数据
+// 从 fal.ai Whisper 格式提取字级别数据
 const allWords = [];
 
 if (result.chunks && Array.isArray(result.chunks)) {

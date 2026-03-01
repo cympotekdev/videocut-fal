@@ -12,7 +12,7 @@ description: 字幕生成与烧录。fal.ai 转录→词典纠错→审核→烧
 ```
 1. 提取音频 + 上传          ⏱ ~1min
     ↓
-2. fal.ai Wizper 转录       ⏱ ~2min
+2. fal.ai Whisper 转录       ⏱ ~2min
     ↓
 3. Agent 自动校对            ⏱ ~3-5min
     ↓
@@ -32,9 +32,9 @@ curl -s -F "files[]=@audio.mp3" https://uguu.se/upload
 
 ---
 
-## Step 2: fal.ai Wizper 转录
+## Step 2: fal.ai Whisper 转录
 
-转录脚本使用 fal.ai Wizper（Whisper v3 Large），支持字级别时间戳：
+转录脚本使用 fal.ai Whisper（Whisper v3 Large），支持字级别时间戳：
 
 ```bash
 bash ../剪口播/scripts/fal_transcribe.sh "https://o.uguu.se/xxxxx.mp3"

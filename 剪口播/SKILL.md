@@ -9,12 +9,13 @@ output: subtitles_words.json、auto_selected.json、review.html
 pos: 转录+识别，到用户网页审核为止
 
 原项目: https://github.com/Ceeon/videocut-skills (火山引擎版)
-本项目: 改用 fal.ai Wizper (Whisper v3 Large) 替代火山引擎
+本项目: 改用 fal.ai Whisper v3 Large (`fal-ai/whisper`) 替代火山引擎
+注意: 不要用 fal-ai/wizper，它不支持 chunk_level=word
 -->
 
 # 剪口播 v2 (fal.ai 版)
 
-> fal.ai Wizper 转录 + AI 口误识别 + 网页审核
+> fal.ai Whisper 转录 + AI 口误识别 + 网页审核
 
 ## 快速使用
 
@@ -54,7 +55,7 @@ output/
     ↓
 2. 上传获取公网 URL (uguu.se)
     ↓
-3. fal.ai Wizper API 转录（字级别时间戳）
+3. fal.ai Whisper API 转录（字级别时间戳）
     ↓
 4. 生成字级别字幕 (subtitles_words.json)
     ↓
@@ -93,7 +94,7 @@ ffmpeg -i "file:$VIDEO_PATH" -vn -acodec libmp3lame -y audio.mp3
 curl -s -F "files[]=@audio.mp3" https://uguu.se/upload
 # 返回: {"success":true,"files":[{"url":"https://h.uguu.se/xxx.mp3"}]}
 
-# 3. 调用 fal.ai Wizper API
+# 3. 调用 fal.ai Whisper API
 SKILL_DIR="<skill安装路径>/剪口播"
 "$SKILL_DIR/scripts/fal_transcribe.sh" "https://h.uguu.se/xxx.mp3"
 # 输出: fal_result.json
@@ -256,8 +257,10 @@ cp .env.example .env
 
 ### 模型说明
 
-本项目使用 `fal-ai/wizper`（Whisper v3 Large 的 fal.ai 优化版）：
+本项目使用 `fal-ai/whisper`（Whisper v3 Large）：
 - 支持 `chunk_level=word` 获取字级别时间戳
 - 支持中文（`language=zh`）
 - 异步队列模式，支持长音频
-- API 文档: https://fal.ai/models/fal-ai/wizper/api
+- API 文档: https://fal.ai/models/fal-ai/whisper/api
+
+> ⚠️ 不要用 `fal-ai/wizper`，它只支持 `chunk_level=segment`，无法获取字级别时间戳。

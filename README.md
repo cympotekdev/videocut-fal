@@ -1,6 +1,6 @@
 # videocut-fal — AI 视频剪辑 Agent（fal.ai 版）
 
-> Fork 自 [Ceeon/videocut-skills](https://github.com/Ceeon/videocut-skills)，将火山引擎替换为 [fal.ai](https://fal.ai) Wizper API
+> Fork 自 [Ceeon/videocut-skills](https://github.com/Ceeon/videocut-skills)，将火山引擎替换为 [fal.ai](https://fal.ai) Whisper API
 
 用 Claude Code Skills 构建的视频剪辑 Agent，专为口播视频设计。
 
@@ -8,10 +8,10 @@
 
 | | 原版 (Ceeon) | 本版 (fal.ai) |
 |--|-------------|--------------|
-| **语音转录** | 火山引擎 ASR | fal.ai Wizper (Whisper v3 Large) |
+| **语音转录** | 火山引擎 ASR | fal.ai Whisper v3 Large (`fal-ai/whisper`) |
 | **API Key** | `VOLCENGINE_API_KEY` | `FAL_KEY` |
 | **热词功能** | ✅ API 原生支持 | ❌ 由 Agent 词典校对替代 |
-| **字级别时间戳** | ✅ | ✅ (`chunk_level=word`) |
+| **字级别时间戳** | ✅ | ✅ (`chunk_level=word`，需用 `fal-ai/whisper`) |
 | **中文支持** | ✅ | ✅ (`language=zh`) |
 | **地域限制** | 需中国手机号注册 | 全球可用 |
 | **计费方式** | 预付套餐 | 按使用量 |
@@ -68,7 +68,7 @@ AI 会自动检查 Node.js、FFmpeg 等依赖。
 │ /videocut:剪口播 视频.mp4                   │
 │                                             │
 │ 1. 提取音频 → 上传云端                      │
-│ 2. fal.ai Wizper 转录 → 字级别时间戳        │
+│ 2. fal.ai Whisper 转录 → 字级别时间戳        │
 │ 3. AI 审核：静音/口误/重复/语气词           │
 │ 4. 生成审核网页 → 浏览器打开                │
 └─────────────────────────────────────────────┘
@@ -85,7 +85,7 @@ AI 会自动检查 Node.js、FFmpeg 等依赖。
 ┌─────────────────────────────────────────────┐
 │ /videocut:字幕                              │
 │                                             │
-│ - Wizper 转录                               │
+│ - Whisper 转录                               │
 │ - 词典纠错                                  │
 │ - 人工确认 → 烧录字幕                       │
 └─────────────────────────────────────────────┘
@@ -101,7 +101,7 @@ videocut/
 ├── 剪口播/                # 核心：转录 + AI 审核 + 剪辑
 │   ├── SKILL.md
 │   ├── scripts/
-│   │   ├── fal_transcribe.sh      # fal.ai Wizper 转录
+│   │   ├── fal_transcribe.sh      # fal.ai Whisper 转录
 │   │   ├── generate_subtitles.js  # 生成字级别字幕
 │   │   ├── generate_review.js     # 生成审核网页
 │   │   ├── review_server.js       # 审核+剪辑服务器
@@ -118,7 +118,7 @@ videocut/
 
 ```
 ┌──────────────────┐     ┌──────────────────┐
-│ fal.ai Wizper    │────▶│ 字级别时间戳     │
+│ fal.ai Whisper    │────▶│ 字级别时间戳     │
 │（Whisper v3）     │     │ fal_result.json  │
 └──────────────────┘     └────────┬─────────┘
                                   │
@@ -152,18 +152,19 @@ videocut/
 
 ## fal.ai 模型参考
 
-| 模型 | 端点 | 用途 |
-|------|------|------|
-| **Wizper** | `fal-ai/wizper` | 语音转录（Whisper v3 Large 优化版）|
-| Whisper | `fal-ai/whisper` | 标准 Whisper 转录 |
-| ElevenLabs STT | `fal-ai/elevenlabs/speech-to-text` | ElevenLabs 语音转文字 |
+| 模型 | 端点 | 用途 | 字级别时间戳 |
+|------|------|------|-------------|
+| **Whisper** | `fal-ai/whisper` | 语音转录（Whisper v3 Large）| ✅ `chunk_level=word` |
+| ElevenLabs STT | `fal-ai/elevenlabs/speech-to-text` | ElevenLabs 语音转文字 | ❌ |
 
-本项目默认使用 **Wizper**（速度最快、支持字级别时间戳）。
+本项目使用 `fal-ai/whisper`，支持 `chunk_level=word` 获取字级别时间戳。
+
+> ⚠️ **注意**: `fal-ai/wizper` (Whisper 优化版) 不支持 `chunk_level=word`，仅支持 `segment`，因此不适用于本项目。
 
 ## 致谢
 
 - 原始项目: [Ceeon/videocut-skills](https://github.com/Ceeon/videocut-skills)
-- 转录引擎: [fal.ai Wizper](https://fal.ai/models/fal-ai/wizper)
+- 转录引擎: [fal.ai Whisper](https://fal.ai/models/fal-ai/whisper)
 - 语音模型: [OpenAI Whisper](https://github.com/openai/whisper)
 
 ## License

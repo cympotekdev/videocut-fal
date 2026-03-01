@@ -1,12 +1,14 @@
 #!/bin/bash
 #
-# fal.ai Wizper 语音识别（Whisper v3 Large）
+# fal.ai Whisper 语音识别（Whisper v3 Large，字级别时间戳）
 #
 # 用法: ./fal_transcribe.sh <audio_url>
 # 输出: fal_result.json
 #
 # 替代原始的 volcengine_transcribe.sh
-# API 文档: https://fal.ai/models/fal-ai/wizper/api
+# API 文档: https://fal.ai/models/fal-ai/whisper/api
+#
+# 注意: 使用 fal-ai/whisper（非 wizper），因为 wizper 不支持 chunk_level=word
 #
 
 AUDIO_URL="$1"
@@ -34,7 +36,7 @@ if [ -z "$FAL_KEY" ]; then
   exit 1
 fi
 
-echo "🎤 提交 fal.ai Wizper 转录任务..."
+echo "🎤 提交 fal.ai Whisper 转录任务..."
 echo "音频 URL: $AUDIO_URL"
 
 # 构建请求体
@@ -53,7 +55,7 @@ EOF
 
 # 步骤1: 提交任务到队列
 echo "📤 提交到队列..."
-SUBMIT_RESPONSE=$(curl -s -X POST "https://queue.fal.run/fal-ai/wizper" \
+SUBMIT_RESPONSE=$(curl -s -X POST "https://queue.fal.run/fal-ai/whisper" \
   -H "Authorization: Key $FAL_KEY" \
   -H "Content-Type: application/json" \
   -d "$REQUEST_BODY")
@@ -78,7 +80,7 @@ while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
   sleep 5
   ATTEMPT=$((ATTEMPT + 1))
 
-  STATUS_RESPONSE=$(curl -s -X GET "https://queue.fal.run/fal-ai/wizper/requests/$REQUEST_ID/status" \
+  STATUS_RESPONSE=$(curl -s -X GET "https://queue.fal.run/fal-ai/whisper/requests/$REQUEST_ID/status" \
     -H "Authorization: Key $FAL_KEY")
 
   STATUS=$(echo "$STATUS_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)
@@ -88,7 +90,7 @@ while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
     echo "✅ 转录完成，获取结果..."
 
     # 获取结果
-    RESULT_RESPONSE=$(curl -s -X GET "https://queue.fal.run/fal-ai/wizper/requests/$REQUEST_ID" \
+    RESULT_RESPONSE=$(curl -s -X GET "https://queue.fal.run/fal-ai/whisper/requests/$REQUEST_ID" \
       -H "Authorization: Key $FAL_KEY")
 
     echo "$RESULT_RESPONSE" > fal_result.json
