@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 字幕审核服务器
+ * 字幕審核伺服器
  * 直接编辑 subtitles_with_time.json，时间戳不变
  *
  * 用法: node subtitle_server.js [port] [video_path]
@@ -19,18 +19,18 @@ const SUBTITLES_FILE = './subtitles_with_time.json';
 let subtitles = [];
 if (fs.existsSync(SUBTITLES_FILE)) {
   subtitles = JSON.parse(fs.readFileSync(SUBTITLES_FILE, 'utf8'));
-  console.log(`📝 加载 ${subtitles.length} 条字幕`);
+  console.log(`📝 載入 ${subtitles.length} 條字幕`);
 } else {
   console.error('❌ 找不到 subtitles_with_time.json');
   process.exit(1);
 }
 
-// 读取词典
-const DICT_FILE = path.join(__dirname, '..', '词典.txt');
+// 讀取字典
+const DICT_FILE = path.join(__dirname, '..', 'dictionary.txt');
 let dictionary = [];
 if (fs.existsSync(DICT_FILE)) {
   dictionary = fs.readFileSync(DICT_FILE, 'utf8').split('\n').filter(l => l.trim());
-  console.log(`📖 加载词典 ${dictionary.length} 条`);
+  console.log(`📖 載入字典 ${dictionary.length} 条`);
 }
 
 const server = http.createServer((req, res) => {
@@ -44,14 +44,14 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // API: 获取字幕
+  // API: 取得字幕
   if (req.url === '/api/subtitles') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(subtitles));
     return;
   }
 
-  // API: 保存字幕
+  // API: 儲存字幕
   if (req.method === 'POST' && req.url === '/api/save') {
     let body = '';
     req.on('data', chunk => body += chunk);
@@ -59,7 +59,7 @@ const server = http.createServer((req, res) => {
       try {
         subtitles = JSON.parse(body);
         fs.writeFileSync(SUBTITLES_FILE, JSON.stringify(subtitles, null, 2));
-        console.log('💾 已保存字幕');
+        console.log('💾 已儲存字幕');
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
       } catch (err) {
@@ -81,16 +81,16 @@ const server = http.createServer((req, res) => {
   // API: 保存 SRT 文件
   if (req.method === 'POST' && req.url === '/api/save-srt') {
     const srt = generateSRT(subtitles);
-    const srtPath = './3_输出/' + path.basename(VIDEO_PATH, '.mp4') + '.srt';
-    fs.mkdirSync('./3_输出', { recursive: true });
+    const srtPath = './3_output/' + path.basename(VIDEO_PATH, '.mp4') + '.srt';
+    fs.mkdirSync('./3_output', { recursive: true });
     fs.writeFileSync(srtPath, srt);
-    console.log('💾 已保存 SRT:', srtPath);
+    console.log('💾 已儲存 SRT:', srtPath);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, path: srtPath }));
     return;
   }
 
-  // API: 获取视频信息（时长+分辨率+帧率，用于预估烧录时间）
+  // API: 取得影片資訊（時長+解析度+幀率，用於預估燒錄時間）
   if (req.url === '/api/video-info') {
     try {
       const dur = parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "file:${VIDEO_PATH}"`).toString().trim());
@@ -110,7 +110,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // API: 烧录字幕（SSE 实时进度）
+  // API: 燒錄字幕（SSE 实时进度）
   if (req.method === 'POST' && req.url === '/api/burn') {
     let body = '';
     req.on('data', chunk => body += chunk);
@@ -120,19 +120,19 @@ const server = http.createServer((req, res) => {
         const outlineVal = outline || 2;
         const baseName = path.basename(VIDEO_PATH, '.mp4');
 
-        fs.mkdirSync('./3_输出', { recursive: true });
+        fs.mkdirSync('./3_output', { recursive: true });
 
         // 保存 SRT
         const srt = generateSRT(subtitles);
-        const srtPath = './3_输出/' + baseName + '.srt';
+        const srtPath = './3_output/' + baseName + '.srt';
         fs.writeFileSync(srtPath, srt);
-        console.log('💾 已保存 SRT:', srtPath);
+        console.log('💾 已儲存 SRT:', srtPath);
 
         // 保存人工校对格式 (方便存档)
         const readable = generateReadableSubtitles(subtitles);
-        const readablePath = './3_输出/' + baseName + '_字幕稿.md';
+        const readablePath = './3_output/' + baseName + '_字幕稿.md';
         fs.writeFileSync(readablePath, readable);
-        console.log('📝 已保存字幕稿:', readablePath);
+        console.log('📝 已儲存字幕稿:', readablePath);
 
         // 获取总帧数（用时长 × 帧率估算，比 -count_frames 快得多）
         let totalFrames = 0;
@@ -151,10 +151,10 @@ const server = http.createServer((req, res) => {
           'Connection': 'keep-alive',
         });
 
-        const outputPath = './3_输出/' + baseName + '_字幕.mp4';
+        const outputPath = './3_output/' + baseName + '_字幕.mp4';
         const args = ['-i', VIDEO_PATH, '-vf', `subtitles='${srtPath}':force_style='FontSize=22,FontName=PingFang SC,Bold=1,PrimaryColour=&H0000deff,OutlineColour=&H00000000,Outline=${outlineVal},Alignment=2,MarginV=30'`, '-c:a', 'copy', '-y', outputPath];
 
-        console.log('🎬 烧录字幕...');
+        console.log('🎬 燒錄字幕...');
         const startTime = Date.now();
         const proc = spawn('ffmpeg', args, { stdio: ['pipe', 'pipe', 'pipe'] });
 
@@ -187,7 +187,7 @@ const server = http.createServer((req, res) => {
             console.log(`✅ 完成: ${outputPath} (耗时 ${elapsed}s)`);
             res.write(`data: ${JSON.stringify({ done: true, path: outputPath, srtPath, readablePath, elapsed })}\n\n`);
           } else {
-            console.error(`❌ 烧录失败 (exit code ${code})`);
+            console.error(`❌ 燒錄失敗 (exit code ${code})`);
             res.write(`data: ${JSON.stringify({ error: `ffmpeg exit code ${code}` })}\n\n`);
           }
           res.end();
@@ -199,7 +199,7 @@ const server = http.createServer((req, res) => {
         });
 
       } catch (err) {
-        console.error('❌ 烧录失败:', err.message);
+        console.error('❌ 燒錄失敗:', err.message);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
       }
@@ -207,7 +207,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 视频文件
+  // 影片文件
   if (req.url === '/video.mp4' && VIDEO_PATH) {
     const stat = fs.statSync(VIDEO_PATH);
     const range = req.headers.range;
@@ -280,7 +280,7 @@ function generateHTML() {
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>字幕审核</title>
+  <title>字幕審核</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #e0e0e0; }
@@ -342,12 +342,12 @@ function generateHTML() {
           <option value="2">2x</option>
           <option value="3">3x</option>
         </select>
-        <button class="btn-secondary" onclick="saveSubtitles()">💾 保存字幕</button>
-        <button class="btn-secondary" onclick="saveSRT()">📄 导出 SRT</button>
-        <button class="btn-primary" onclick="burnSubtitles()">🎬 烧录字幕</button>
-        <label style="margin-left:10px; font-size:14px;">描边: <input type="number" id="outline" value="2" min="1" max="5" style="width:50px;padding:5px;background:#333;border:none;color:white;border-radius:4px;"></label>
+        <button class="btn-secondary" onclick="saveSubtitles()">💾 儲存字幕</button>
+        <button class="btn-secondary" onclick="saveSRT()">📄 匯出 SRT</button>
+        <button class="btn-primary" onclick="burnSubtitles()">🎬 燒錄字幕</button>
+        <label style="margin-left:10px; font-size:14px;">描邊: <input type="number" id="outline" value="2" min="1" max="5" style="width:50px;padding:5px;background:#333;border:none;color:white;border-radius:4px;"></label>
       </div>
-      <div class="status" id="status">就绪</div>
+      <div class="status" id="status">就緒</div>
       <div class="progress-wrap" id="progressWrap">
         <div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
         <div class="progress-text"><span id="progressLeft"></span><span id="progressRight"></span></div>
@@ -356,12 +356,12 @@ function generateHTML() {
 
     <div class="subtitle-panel">
       <div class="subtitle-header">
-        <h2>字幕列表 (<span id="count">0</span>)</h2>
-        <input type="text" class="search-box" placeholder="搜索..." oninput="filterSubtitles(this.value)">
+        <h2>字幕清單 (<span id="count">0</span>)</h2>
+        <input type="text" class="search-box" placeholder="搜尋..." oninput="filterSubtitles(this.value)">
       </div>
       <div class="subtitle-list" id="subtitleList"></div>
       <div class="dict-panel">
-        <strong>词典：</strong>
+        <strong>字典：</strong>
         <span id="dictWords">${dictionary.map(w => `<span class="dict-word" onclick="insertWord('${w}')">${w}</span>`).join('')}</span>
       </div>
     </div>
@@ -424,7 +424,7 @@ function generateHTML() {
       subtitles[idx].text = value;
       editingIdx = -1;
       renderSubtitles();
-      setStatus('已修改，记得保存');
+      setStatus('已修改，記得儲存');
     }
 
     function filterSubtitles(filter) {
@@ -458,21 +458,21 @@ function generateHTML() {
     });
 
     async function saveSubtitles() {
-      setStatus('保存中...');
+      setStatus('儲存中...');
       const res = await fetch('/api/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(subtitles)
       });
       const data = await res.json();
-      setStatus(data.success ? '✅ 已保存' : '❌ 保存失败', !data.success);
+      setStatus(data.success ? '✅ 已儲存' : '❌ 儲存失敗', !data.success);
     }
 
     async function saveSRT() {
-      setStatus('导出 SRT...');
+      setStatus('匯出 SRT...');
       const res = await fetch('/api/save-srt', { method: 'POST' });
       const data = await res.json();
-      setStatus(data.success ? '✅ SRT 已保存: ' + data.path : '❌ 导出失败', !data.success);
+      setStatus(data.success ? '✅ SRT 已儲存: ' + data.path : '❌ 匯出失敗', !data.success);
     }
 
     function fmtTime(sec) {
@@ -482,7 +482,7 @@ function generateHTML() {
     }
 
     async function burnSubtitles() {
-      if (!confirm('确认烧录字幕？\\n\\n点击确定开始')) return;
+      if (!confirm('确认燒錄字幕？\\n\\n點選確定開始')) return;
 
       const outline = document.getElementById('outline').value;
       const progressWrap = document.getElementById('progressWrap');
@@ -492,7 +492,7 @@ function generateHTML() {
 
       progressWrap.classList.add('active');
       progressFill.style.width = '0%';
-      setStatus('🎬 烧录中... 准备编码');
+      setStatus('🎬 燒錄中... 准备编码');
 
       try {
         const res = await fetch('/api/burn', {
@@ -519,12 +519,12 @@ function generateHTML() {
               progressFill.style.width = '100%';
               progressLeft.textContent = '100%';
               progressRight.textContent = \`耗时 \${fmtTime(Math.round(parseFloat(d.elapsed)))}\`;
-              setStatus(\`✅ 烧录完成 (耗时\${d.elapsed}s): \${d.path}\`);
+              setStatus(\`✅ 燒錄完成 (耗时\${d.elapsed}s): \${d.path}\`);
               setTimeout(() => progressWrap.classList.remove('active'), 5000);
               return;
             }
             if (d.error) {
-              setStatus('❌ 烧录失败: ' + d.error, true);
+              setStatus('❌ 燒錄失敗: ' + d.error, true);
               progressWrap.classList.remove('active');
               return;
             }
@@ -533,11 +533,11 @@ function generateHTML() {
             progressLeft.textContent = d.percent + '%';
             const speedText = d.speed > 0 ? \` | \${d.speed}x\` : '';
             progressRight.textContent = \`剩余 \${fmtTime(d.remaining)}\${speedText}\`;
-            setStatus(\`🎬 烧录中... \${d.percent}% | 剩余 \${fmtTime(d.remaining)}\`);
+            setStatus(\`🎬 燒錄中... \${d.percent}% | 剩余 \${fmtTime(d.remaining)}\`);
           }
         }
       } catch(err) {
-        setStatus('❌ 请求失败: ' + err.message, true);
+        setStatus('❌ 請求失敗: ' + err.message, true);
         progressWrap.classList.remove('active');
       }
     }
@@ -563,15 +563,15 @@ function generateHTML() {
 
 server.listen(PORT, () => {
   console.log(`
-🎬 字幕审核服务器已启动
-📍 地址: http://localhost:${PORT}
-📹 视频: ${VIDEO_PATH}
+🎬 字幕審核伺服器已啟動
+📍 位址: http://localhost:${PORT}
+📹 影片: ${VIDEO_PATH}
 
-操作说明:
-- 双击字幕文字进行编辑
-- 点击字幕跳转到对应时间
-- 空格键播放/暂停
-- 编辑完成后点击「保存字幕」
-- 最后点击「烧录字幕」生成视频
+操作說明:
+- 雙擊字幕文字進行編輯
+- 點選字幕跳轉到對應時間
+- 空白鍵播放/暫停
+- 編輯完成後点击「儲存字幕」
+- 最後点击「燒錄字幕」生成影片
   `);
 });

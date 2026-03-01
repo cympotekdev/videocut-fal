@@ -1,171 +1,170 @@
-# videocut-fal — AI 视频剪辑 Agent（fal.ai 版）
+# videocut-fal — AI Video Editing Agent (fal.ai Edition)
 
-> Fork 自 [Ceeon/videocut-skills](https://github.com/Ceeon/videocut-skills)，将火山引擎替换为 [fal.ai](https://fal.ai) Whisper API
+> Forked from [Ceeon/videocut-skills](https://github.com/Ceeon/videocut-skills), replacing Volcano Engine ASR with [fal.ai](https://fal.ai) Whisper API
 
-用 Claude Code Skills 构建的视频剪辑 Agent，专为口播视频设计。
+AI-powered video editing agent built with Claude Code Skills, designed for narration videos.
 
-## 与原版的差异
+## Differences from Original
 
-| | 原版 (Ceeon) | 本版 (fal.ai) |
+| | Original (Ceeon) | This Fork (fal.ai) |
 |--|-------------|--------------|
-| **语音转录** | 火山引擎 ASR | fal.ai Whisper v3 Large (`fal-ai/whisper`) |
+| **Speech-to-Text** | Volcano Engine ASR | fal.ai Whisper v3 Large (`fal-ai/whisper`) |
 | **API Key** | `VOLCENGINE_API_KEY` | `FAL_KEY` |
-| **热词功能** | ✅ API 原生支持 | ❌ 由 Agent 词典校对替代 |
-| **字级别时间戳** | ✅ | ✅ (`chunk_level=word`，需用 `fal-ai/whisper`) |
-| **中文支持** | ✅ | ✅ (`language=zh`) |
-| **地域限制** | 需中国手机号注册 | 全球可用 |
-| **计费方式** | 预付套餐 | 按使用量 |
+| **Hot Words** | ✅ Native API support | ❌ Agent dictionary proofreading instead |
+| **Word-level Timestamps** | ✅ | ✅ (`chunk_level=word`, requires `fal-ai/whisper`) |
+| **Region Restriction** | Requires Chinese phone number | Available worldwide |
+| **Billing** | Prepaid packages | Pay-per-use |
 
-## 痛点与方案
+## Problem & Solution
 
-剪映的"智能剪口播"有两个痛点：
+CapCut's "Smart Narration Cut" has two pain points:
 
-- **无法理解语义**：重复说的句子、说错后纠正的内容，它识别不出来
-- **字幕质量差**：专业术语经常识别错误
+- **No semantic understanding**: Can't detect repeated sentences or self-corrections
+- **Poor subtitle quality**: Professional terms often misrecognized
 
-这个 Agent 用 Claude 的语义理解能力解决第一个问题，用自定义词典解决第二个问题。
+This agent uses Claude's semantic understanding to solve the first problem, and custom dictionaries for the second.
 
-## 功能对比
+## Feature Comparison
 
-| 功能 | 说明 | 对比剪映 |
-|------|------|---------|
-| 语义理解 | AI 逐句分析，识别重说/纠正/卡顿 | 只能模式匹配 |
-| 静音检测 | >0.3s 自动标记，可调阈值 | 固定阈值 |
-| 重复句检测 | 相邻句开头≥5字相同 → 删前保后 | 无此功能 |
-| 句内重复 | "好我们接下来好我们接下来做" → 删重复 | 无此功能 |
-| 词典纠错 | 自定义专业术语词典 | 无此功能 |
-| 自更新 | 记住你的偏好，越用越准 | 无此功能 |
+| Feature | Description | vs CapCut |
+|---------|-------------|---------|
+| Semantic Analysis | AI analyzes each sentence for redo/correction/stuttering | Pattern matching only |
+| Silence Detection | >0.3s auto-tagged, adjustable threshold | Fixed threshold |
+| Repeated Sentences | Adjacent sentences with ≥5 same starting chars → delete shorter | Not available |
+| In-sentence Repeat | "okay let's okay let's do this" → delete duplicate | Not available |
+| Dictionary Correction | Custom professional terminology dictionary | Not available |
+| Self-evolution | Remembers your preferences, improves over time | Not available |
 
-## 安装
+## Installation
 
 ```bash
-# 克隆到 Claude Code skills 目录
+# Clone to Claude Code skills directory
 git clone https://github.com/cympotekdev/videocut-fal.git ~/.claude/skills/videocut
 
 cd ~/.claude/skills/videocut
 cp .env.example .env
-# 编辑 .env，填入 fal.ai API Key
+# Edit .env and fill in your fal.ai API Key
 ```
 
-获取 API Key: https://fal.ai/dashboard/keys
+Get API Key: https://fal.ai/dashboard/keys
 
-在 Claude Code 中输入：
+In Claude Code:
 
 ```
-/videocut:安装
+/videocut:setup
 ```
 
-AI 会自动检查 Node.js、FFmpeg 等依赖。
+AI will automatically check Node.js, FFmpeg and other dependencies.
 
-## 使用流程
+## Workflow
 
 ```
 ┌─────────────────────────────────────────────┐
-│ /videocut:安装 → 首次使用，检查环境         │
+│ /videocut:setup → First time setup          │
 └─────────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────────┐
-│ /videocut:剪口播 视频.mp4                   │
+│ /videocut:narration-cut video.mp4           │
 │                                             │
-│ 1. 提取音频 → 上传云端                      │
-│ 2. fal.ai Whisper 转录 → 字级别时间戳        │
-│ 3. AI 审核：静音/口误/重复/语气词           │
-│ 4. 生成审核网页 → 浏览器打开                │
+│ 1. Extract audio → upload to cloud          │
+│ 2. fal.ai Whisper STT → word timestamps    │
+│ 3. AI review: silence/flubs/repeats/fillers │
+│ 4. Generate review page → open in browser   │
 └─────────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────────┐
-│ 【人工审核 + 执行剪辑】                     │
+│ 【Manual Review + Execute Cut】             │
 │                                             │
-│ - 单击跳转播放                              │
-│ - 双击选中/取消                             │
-│ - Shift 拖动多选                            │
-│ - 确认后点击「执行剪辑」→ FFmpeg 剪辑       │
+│ - Click to jump playback                    │
+│ - Double-click to select/deselect           │
+│ - Shift+drag for batch select               │
+│ - Confirm then click「Execute Cut」→ FFmpeg │
 └─────────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────────┐
-│ /videocut:字幕                              │
+│ /videocut:subtitles                         │
 │                                             │
-│ - Whisper 转录                               │
-│ - 词典纠错                                  │
-│ - 人工确认 → 烧录字幕                       │
+│ - Whisper transcription                     │
+│ - Dictionary correction                     │
+│ - Manual review → burn subtitles            │
 └─────────────────────────────────────────────┘
 ```
 
-## 目录结构
+## Directory Structure
 
 ```
 videocut/
 ├── README.md
-├── .env.example          # FAL_KEY 配置模板
-├── 安装/                  # 环境安装 skill
-├── 剪口播/                # 核心：转录 + AI 审核 + 剪辑
+├── .env.example              # FAL_KEY config template
+├── setup/                    # Environment setup skill
+├── narration-cut/            # Core: transcribe + AI review + cut
 │   ├── SKILL.md
 │   ├── scripts/
-│   │   ├── fal_transcribe.sh      # fal.ai Whisper 转录
-│   │   ├── generate_subtitles.js  # 生成字级别字幕
-│   │   ├── generate_review.js     # 生成审核网页
-│   │   ├── review_server.js       # 审核+剪辑服务器
-│   │   └── cut_video.sh           # FFmpeg 精确剪辑
-│   └── 用户习惯/           # 审核规则（可自定义）
-├── 字幕/                  # 字幕生成与烧录
+│   │   ├── fal_transcribe.sh      # fal.ai Whisper transcription
+│   │   ├── generate_subtitles.js  # Generate word-level subtitles
+│   │   ├── generate_review.js     # Generate review web page
+│   │   ├── review_server.js       # Review + cut server
+│   │   └── cut_video.sh           # FFmpeg precise cutting
+│   └── user-rules/                # Review rules (customizable)
+├── subtitles/                # Subtitle generation & burning
 │   ├── scripts/
 │   │   └── subtitle_server.js
-│   └── 词典.txt            # 自定义词典
-└── 自进化/                # 自我进化机制
+│   └── dictionary.txt        # Custom dictionary
+└── self-evolve/              # Self-evolution mechanism
 ```
 
-## 架构
+## Architecture
 
 ```
 ┌──────────────────┐     ┌──────────────────┐
-│ fal.ai Whisper    │────▶│ 字级别时间戳     │
-│（Whisper v3）     │     │ fal_result.json  │
+│ fal.ai Whisper   │────▶│ Word Timestamps  │
+│ (Whisper v3)     │     │ fal_result.json  │
 └──────────────────┘     └────────┬─────────┘
                                   │
                                   ▼
 ┌──────────────────┐     ┌──────────────────┐
-│ Claude Code      │────▶│ AI 审核结果      │
-│（语义分析）       │     │ auto_selected    │
+│ Claude Code      │────▶│ AI Review Result │
+│ (Semantic)       │     │ auto_selected    │
 └──────────────────┘     └────────┬─────────┘
                                   │
                                   ▼
 ┌──────────────────┐     ┌──────────────────┐
-│ 审核网页         │────▶│ 最终删除列表     │
-│（人工确认）       │     │ delete_segments  │
+│ Review Page      │────▶│ Final Cut List   │
+│ (Manual Review)  │     │ delete_segments  │
 └──────────────────┘     └────────┬─────────┘
                                   │
                                   ▼
 ┌──────────────────┐     ┌──────────────────┐
-│ FFmpeg           │────▶│ 剪辑后视频       │
+│ FFmpeg           │────▶│ Cut Video        │
 │ filter_complex   │     │ xxx_cut.mp4      │
 └──────────────────┘     └──────────────────┘
 ```
 
-## 依赖
+## Dependencies
 
-| 依赖 | 用途 | 安装方式 |
-|------|------|----------|
-| Node.js 18+ | 运行脚本 | `brew install node` |
-| FFmpeg | 音视频处理 | `brew install ffmpeg` |
-| Python 3 | JSON 解析 | 系统自带 |
-| fal.ai API | 语音转录 | [获取 Key](https://fal.ai/dashboard/keys) |
+| Dependency | Purpose | Installation |
+|------------|---------|-------------|
+| Node.js 18+ | Run scripts | `brew install node` |
+| FFmpeg | Audio/video processing | `brew install ffmpeg` |
+| Python 3 | JSON parsing | Pre-installed |
+| fal.ai API | Speech-to-text | [Get Key](https://fal.ai/dashboard/keys) |
 
-## fal.ai 模型参考
+## fal.ai Model Reference
 
-| 模型 | 端点 | 用途 | 字级别时间戳 |
-|------|------|------|-------------|
-| **Whisper** | `fal-ai/whisper` | 语音转录（Whisper v3 Large）| ✅ `chunk_level=word` |
-| ElevenLabs STT | `fal-ai/elevenlabs/speech-to-text` | ElevenLabs 语音转文字 | ❌ |
+| Model | Endpoint | Purpose | Word Timestamps |
+|-------|----------|---------|-----------------|
+| **Whisper** | `fal-ai/whisper` | Speech-to-text (Whisper v3 Large) | ✅ `chunk_level=word` |
+| ElevenLabs STT | `fal-ai/elevenlabs/speech-to-text` | ElevenLabs speech-to-text | ❌ |
 
-本项目使用 `fal-ai/whisper`，支持 `chunk_level=word` 获取字级别时间戳。
+This project uses `fal-ai/whisper` with `chunk_level=word` for word-level timestamps.
 
-> ⚠️ **注意**: `fal-ai/wizper` (Whisper 优化版) 不支持 `chunk_level=word`，仅支持 `segment`，因此不适用于本项目。
+> ⚠️ **Note**: `fal-ai/wizper` (optimized Whisper variant) does NOT support `chunk_level=word` (only `segment`), so it's not suitable for this project.
 
-## 致谢
+## Credits
 
-- 原始项目: [Ceeon/videocut-skills](https://github.com/Ceeon/videocut-skills)
-- 转录引擎: [fal.ai Whisper](https://fal.ai/models/fal-ai/whisper)
-- 语音模型: [OpenAI Whisper](https://github.com/openai/whisper)
+- Original project: [Ceeon/videocut-skills](https://github.com/Ceeon/videocut-skills)
+- Transcription engine: [fal.ai Whisper](https://fal.ai/models/fal-ai/whisper)
+- Speech model: [OpenAI Whisper](https://github.com/openai/whisper)
 
 ## License
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# 根据删除列表剪辑视频（filter_complex 精确剪辑）
+# 依刪除清單剪輯影片（filter_complex 精确剪辑）
 #
 # 用法: ./cut_video.sh <input.mp4> <delete_segments.json> [output.mp4]
 #
@@ -15,24 +15,24 @@ if [ -z "$INPUT" ] || [ -z "$DELETE_JSON" ]; then
 fi
 
 if [ ! -f "$INPUT" ]; then
-  echo "❌ 找不到输入文件: $INPUT"
+  echo "❌ 找不到輸入檔案: $INPUT"
   exit 1
 fi
 
 if [ ! -f "$DELETE_JSON" ]; then
-  echo "❌ 找不到删除列表: $DELETE_JSON"
+  echo "❌ 找不到刪除清單: $DELETE_JSON"
   exit 1
 fi
 
-# 获取视频时长（file: 前缀处理文件名含冒号的情况）
+# 取得影片時長（file: 前綴處理檔名含冒號的情況）
 DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "file:$INPUT")
-echo "📹 视频时长: ${DURATION}s"
+echo "📹 影片時長: ${DURATION}s"
 
 # 配置参数
-BUFFER_MS=50      # 删除范围前后各扩展 50ms（吃掉气口）
+BUFFER_MS=50      # 刪除範圍前後各擴展 50ms（吃掉氣口）
 CROSSFADE_MS=30   # 音频淡入淡出 30ms
 
-echo "⚙️ 优化参数: 扩展范围=${BUFFER_MS}ms, 音频crossfade=${CROSSFADE_MS}ms"
+echo "⚙️ 最佳化參數: 擴展範圍=${BUFFER_MS}ms, 音訊 crossfade=${CROSSFADE_MS}ms"
 
 # 用 node 生成 filter_complex 命令
 FILTER_CMD=$(node -e "
@@ -45,13 +45,13 @@ const crossfadeSec = $CROSSFADE_MS / 1000;
 // 按开始时间排序
 deleteSegs.sort((a, b) => a.start - b.start);
 
-// 扩展删除范围（前后各加 buffer）
+// 擴展刪除範圍（前后各加 buffer）
 const expandedSegs = deleteSegs.map(seg => ({
   start: Math.max(0, seg.start - bufferSec),
   end: Math.min(duration, seg.end + bufferSec)
 }));
 
-// 合并重叠的删除段
+// 合併重疊的刪除段
 const mergedSegs = [];
 for (const seg of expandedSegs) {
   if (mergedSegs.length === 0 || seg.start > mergedSegs[mergedSegs.length - 1].end) {
@@ -76,14 +76,14 @@ if (cursor < duration) {
   keepSegs.push({ start: cursor, end: duration });
 }
 
-console.error('保留片段数:', keepSegs.length);
-console.error('删除片段数:', mergedSegs.length);
+console.error('保留片段數:', keepSegs.length);
+console.error('刪除片段數:', mergedSegs.length);
 
 let deletedTime = 0;
 for (const seg of mergedSegs) {
   deletedTime += seg.end - seg.start;
 }
-console.error('删除总时长:', deletedTime.toFixed(2) + 's');
+console.error('刪除總時長:', deletedTime.toFixed(2) + 's');
 
 // 生成 filter_complex（带 crossfade）
 let filters = [];
@@ -98,7 +98,7 @@ for (let i = 0; i < keepSegs.length; i++) {
   aLabels.push('a' + i);
 }
 
-// 视频直接 concat
+// 影片直接 concat
 filters.push(vconcat + 'concat=n=' + keepSegs.length + ':v=1:a=0[outv]');
 
 // 音频使用 acrossfade 逐个拼接
@@ -118,12 +118,12 @@ console.log(filters.join(';'));
 ")
 
 if [ -z "$FILTER_CMD" ]; then
-  echo "❌ 生成滤镜命令失败"
+  echo "❌ 產生濾鏡命令失敗"
   exit 1
 fi
 
 echo ""
-echo "✂️ 执行 FFmpeg 精确剪辑..."
+echo "✂️ 執行 FFmpeg 精確剪輯..."
 
 ffmpeg -y -i "file:$INPUT" \
   -filter_complex "$FILTER_CMD" \
@@ -133,11 +133,11 @@ ffmpeg -y -i "file:$INPUT" \
   "file:$OUTPUT"
 
 if [ $? -eq 0 ]; then
-  echo "✅ 已保存: $OUTPUT"
+  echo "✅ 已儲存: $OUTPUT"
 
   NEW_DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "file:$OUTPUT")
-  echo "📹 新时长: ${NEW_DURATION}s"
+  echo "📹 新時長: ${NEW_DURATION}s"
 else
-  echo "❌ 剪辑失败"
+  echo "❌ 剪輯失敗"
   exit 1
 fi

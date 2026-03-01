@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * 生成审核网页（wavesurfer.js 版本）
+ * 產生審核網頁（wavesurfer.js 版本）
  *
  * 用法: node generate_review.js <subtitles_words.json> [auto_selected.json] [audio_file]
- * 输出: review.html, audio.mp3（复制到当前目录）
+ * 輸出: review.html, audio.mp3（複製到目前目錄）
  */
 
 const fs = require('fs');
@@ -17,11 +17,11 @@ const audioFile = process.argv[4] || 'audio.mp3';
 const audioBaseName = 'audio.mp3';
 if (audioFile !== audioBaseName && fs.existsSync(audioFile)) {
   fs.copyFileSync(audioFile, audioBaseName);
-  console.log('📁 已复制音频到当前目录:', audioBaseName);
+  console.log('📁 已複製音频到当前目录:', audioBaseName);
 }
 
 if (!fs.existsSync(subtitlesFile)) {
-  console.error('❌ 找不到字幕文件:', subtitlesFile);
+  console.error('❌ 找不到字幕檔案:', subtitlesFile);
   process.exit(1);
 }
 
@@ -30,7 +30,7 @@ let autoSelected = [];
 
 if (fs.existsSync(autoSelectedFile)) {
   autoSelected = JSON.parse(fs.readFileSync(autoSelectedFile, 'utf8'));
-  console.log('AI 预选:', autoSelected.length, '个元素');
+  console.log('AI 预选:', autoSelected.length, '個元素');
 }
 
 const html = `<!DOCTYPE html>
@@ -38,7 +38,7 @@ const html = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>审核稿</title>
+  <title>審核稿</title>
   <script src="https://unpkg.com/wavesurfer.js@7"></script>
   <style>
     * { box-sizing: border-box; }
@@ -219,19 +219,19 @@ const html = `<!DOCTYPE html>
   <!-- Loading 遮罩 -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
-    <div class="loading-text">🎬 正在剪辑中...</div>
+    <div class="loading-text">🎬 正在剪輯中...</div>
     <div class="loading-progress-container">
       <div class="loading-progress-bar" id="loadingProgress"></div>
     </div>
     <div class="loading-time" id="loadingTime">已等待 0 秒</div>
-    <div class="loading-estimate" id="loadingEstimate">预估剩余: 计算中...</div>
+    <div class="loading-estimate" id="loadingEstimate">預估剩餘: 計算中...</div>
   </div>
 
-  <h1>审核稿</h1>
+  <h1>審核稿</h1>
 
   <div class="controls">
     <div class="buttons">
-      <button onclick="wavesurfer.playPause()">▶️ 播放/暂停</button>
+      <button onclick="wavesurfer.playPause()">▶️ 播放/暫停</button>
       <select id="speed" onchange="wavesurfer.setPlaybackRate(parseFloat(this.value))">
         <option value="0.5">0.5x</option>
         <option value="0.75">0.75x</option>
@@ -240,16 +240,16 @@ const html = `<!DOCTYPE html>
         <option value="1.5">1.5x</option>
         <option value="2">2x</option>
       </select>
-      <button onclick="copyDeleteList()">📋 复制删除列表</button>
-      <button onclick="executeCut()" style="background:#9C27B0">🎬 执行剪辑</button>
-      <button class="danger" onclick="clearAll()">🗑️ 清空选择</button>
+      <button onclick="copyDeleteList()">📋 複製刪除清單</button>
+      <button onclick="executeCut()" style="background:#9C27B0">🎬 執行剪輯</button>
+      <button class="danger" onclick="clearAll()">🗑️ 清空選擇</button>
       <span id="time">00:00 / 00:00</span>
     </div>
     <div id="waveform"></div>
     <div class="help">
-      <div><b>🖱️ 鼠标：</b>单击 = 跳转播放 | 双击 = 选中/取消 | Shift+拖动 = 批量选中/取消</div>
-      <div><b>⌨️ 键盘：</b>空格 = 播放/暂停 | ← → = 跳转1秒 | Shift+←→ = 跳转5秒</div>
-      <div><b>🎨 颜色：</b><span style="color:#ff9800">橙色</span> = AI预选 | <span style="color:#f44336">红色删除线</span> = 已确认删除 | 播放时自动跳过选中片段</div>
+      <div><b>🖱️ 滑鼠：</b>單擊 = 跳轉播放 | 雙擊 = 選取/取消 | Shift+拖动 = 批量選取/取消</div>
+      <div><b>⌨️ 鍵盤：</b>空格 = 播放/暫停 | ← → = 跳轉1秒 | Shift+←→ = 跳轉5秒</div>
+      <div><b>🎨 顏色：</b><span style="color:#ff9800">橘色</span> = AI 預選 | <span style="color:#f44336">紅色刪除線</span> = 已確認刪除 | 播放時自動跳過選取片段</div>
     </div>
   </div>
 
@@ -321,17 +321,17 @@ const html = `<!DOCTYPE html>
 
         div.dataset.index = i;
 
-        // 单击跳转播放
+        // 單擊跳轉播放
         div.onclick = (e) => {
           if (!isSelecting) {
             wavesurfer.setTime(word.start);
           }
         };
 
-        // 双击选中/取消
+        // 雙擊選取/取消
         div.ondblclick = () => toggle(i);
 
-        // Shift+拖动选择/取消
+        // Shift+拖曳選取/取消
         div.onmousedown = (e) => {
           if (e.shiftKey) {
             isSelecting = true;
@@ -395,7 +395,7 @@ const html = `<!DOCTYPE html>
       selected.forEach(i => {
         totalDuration += words[i].end - words[i].start;
       });
-      statsDiv.textContent = \`已选择 \${count} 个元素，总时长 \${totalDuration.toFixed(2)}s\`;
+      statsDiv.textContent = \`已選擇 \${count} 個元素，總時長 \${totalDuration.toFixed(2)}s\`;
     }
 
     // 时间更新 & 高亮当前词 & 跳过选中片段
@@ -468,7 +468,7 @@ const html = `<!DOCTYPE html>
 
       const json = JSON.stringify(merged, null, 2);
       navigator.clipboard.writeText(json).then(() => {
-        alert('已复制 ' + merged.length + ' 个删除片段到剪贴板');
+        alert('已複製 ' + merged.length + ' 個刪除片段到剪貼簿');
       });
     }
 
@@ -482,7 +482,7 @@ const html = `<!DOCTYPE html>
     }
 
     async function executeCut() {
-      // 基于视频时长预估剪辑时间
+      // 基于影片時長预估剪辑时间
       const videoDuration = wavesurfer.getDuration();
       const videoMinutes = (videoDuration / 60).toFixed(1);
       const estimatedTime = Math.max(5, Math.ceil(videoDuration / 4)); // 经验值：约4倍速处理
@@ -490,7 +490,7 @@ const html = `<!DOCTYPE html>
       const estSec = estimatedTime % 60;
       const estText = estMin > 0 ? \`\${estMin}分\${estSec}秒\` : \`\${estSec}秒\`;
 
-      if (!confirm(\`确认执行剪辑？\\n\\n📹 视频时长: \${videoMinutes} 分钟\\n⏱️ 预计耗时: \${estText}\\n\\n点击确定开始\`)) return;
+      if (!confirm(\`確認執行剪輯？\\n\\n📹 影片時長: \${videoMinutes} 分鐘\\n⏱️ 預計耗時: \${estText}\\n\\n點選確定開始\`)) return;
 
       // 直接发送原始时间戳，不做合并（和预览一致）
       const segments = [];
@@ -506,7 +506,7 @@ const html = `<!DOCTYPE html>
       const loadingProgress = document.getElementById('loadingProgress');
       const loadingEstimate = document.getElementById('loadingEstimate');
       overlay.classList.add('show');
-      loadingEstimate.textContent = \`预估剩余: \${estText}\`;
+      loadingEstimate.textContent = \`預估剩餘: \${estText}\`;
 
       const startTime = Date.now();
       const timer = setInterval(() => {
@@ -517,12 +517,12 @@ const html = `<!DOCTYPE html>
         const progress = Math.min(95, (elapsed / estimatedTime) * 100);
         loadingProgress.style.width = progress + '%';
 
-        // 更新预估剩余时间
+        // 更新預估剩餘时间
         const remaining = Math.max(0, estimatedTime - elapsed);
         if (remaining > 0) {
-          loadingEstimate.textContent = \`预估剩余: \${remaining} 秒\`;
+          loadingEstimate.textContent = \`預估剩餘: \${remaining} 秒\`;
         } else {
-          loadingEstimate.textContent = \`即将完成...\`;
+          loadingEstimate.textContent = \`即將完成...\`;
         }
       }, 500);
 
@@ -543,9 +543,9 @@ const html = `<!DOCTYPE html>
         const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
 
         if (data.success) {
-          const msg = \`✅ 剪辑完成！(耗时 \${totalTime}s)
+          const msg = \`✅ 剪輯完成！(耗时 \${totalTime}s)
 
-📁 输出文件: \${data.output}
+📁 輸出檔案: \${data.output}
 
 ⏱️ 时间统计:
    原时长: \${formatDuration(data.originalDuration)}
@@ -553,17 +553,17 @@ const html = `<!DOCTYPE html>
    删减: \${formatDuration(data.deletedDuration)} (\${data.savedPercent}%)\`;
           alert(msg);
         } else {
-          alert('❌ 剪辑失败: ' + data.error);
+          alert('❌ 剪輯失敗: ' + data.error);
         }
       } catch (err) {
         clearInterval(timer);
         overlay.classList.remove('show');
         loadingProgress.style.width = '0%'; // 重置
-        alert('❌ 请求失败: ' + err.message + '\\n\\n请确保使用 review_server.js 启动服务');
+        alert('❌ 請求失敗: ' + err.message + '\\n\\n請確保使用 review_server.js 啟動服務');
       }
     }
 
-    // 键盘快捷键
+    // 鍵盤快捷键
     document.addEventListener('keydown', e => {
       if (e.code === 'Space') {
         e.preventDefault();
@@ -581,6 +581,6 @@ const html = `<!DOCTYPE html>
 </html>`;
 
 fs.writeFileSync('review.html', html);
-console.log('✅ 已生成 review.html');
-console.log('📌 启动服务器: python3 -m http.server 8899');
+console.log('✅ 已產生 review.html');
+console.log('📌 啟動服務器: python3 -m http.server 8899');
 console.log('📌 打开: http://localhost:8899/review.html');

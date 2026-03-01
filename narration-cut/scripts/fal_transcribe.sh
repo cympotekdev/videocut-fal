@@ -3,7 +3,7 @@
 # fal.ai Whisper 语音识别（Whisper v3 Large，字级别时间戳）
 #
 # 用法: ./fal_transcribe.sh <audio_url>
-# 输出: fal_result.json
+# 輸出: fal_result.json
 #
 # 替代原始的 volcengine_transcribe.sh
 # API 文档: https://fal.ai/models/fal-ai/whisper/api
@@ -18,29 +18,29 @@ if [ -z "$AUDIO_URL" ]; then
   exit 1
 fi
 
-# 获取 API Key
+# 取得 API Key
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="$(dirname "$(dirname "$SCRIPT_DIR")")/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "❌ 找不到 $ENV_FILE"
-  echo "请创建: cp .env.example .env 并填入 FAL_KEY"
+  echo "請建立: cp .env.example .env 並填入 FAL_KEY"
   exit 1
 fi
 
 FAL_KEY=$(grep FAL_KEY "$ENV_FILE" | cut -d'=' -f2)
 
 if [ -z "$FAL_KEY" ]; then
-  echo "❌ FAL_KEY 未设置"
-  echo "请在 .env 中填入 FAL_KEY=your_key_here"
+  echo "❌ FAL_KEY 未設定"
+  echo "請在 .env 中填入 FAL_KEY=your_key_here"
   exit 1
 fi
 
-echo "🎤 提交 fal.ai Whisper 转录任务..."
-echo "音频 URL: $AUDIO_URL"
+echo "🎤 提交 fal.ai Whisper 轉錄任務..."
+echo "音訊 URL: $AUDIO_URL"
 
-# 构建请求体
-# chunk_level=word 获取字级别时间戳
+# 建構請求體
+# chunk_level=word 取得字級別時間戳
 # language=zh 中文
 REQUEST_BODY=$(cat <<EOF
 {
@@ -54,7 +54,7 @@ EOF
 )
 
 # 步骤1: 提交任务到队列
-echo "📤 提交到队列..."
+echo "📤 提交到佇列..."
 SUBMIT_RESPONSE=$(curl -s -X POST "https://queue.fal.run/fal-ai/whisper" \
   -H "Authorization: Key $FAL_KEY" \
   -H "Content-Type: application/json" \
@@ -64,13 +64,13 @@ SUBMIT_RESPONSE=$(curl -s -X POST "https://queue.fal.run/fal-ai/whisper" \
 REQUEST_ID=$(echo "$SUBMIT_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('request_id',''))" 2>/dev/null)
 
 if [ -z "$REQUEST_ID" ]; then
-  echo "❌ 提交失败，响应:"
+  echo "❌ 提交失敗，回應:"
   echo "$SUBMIT_RESPONSE"
   exit 1
 fi
 
-echo "✅ 任务已提交，ID: $REQUEST_ID"
-echo "⏳ 等待转录完成..."
+echo "✅ 任務已提交，ID: $REQUEST_ID"
+echo "⏳ 等待轉錄完成..."
 
 # 步骤2: 轮询结果
 MAX_ATTEMPTS=120  # 最多等待 10 分钟
@@ -87,31 +87,31 @@ while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
 
   if [ "$STATUS" = "COMPLETED" ]; then
     echo ""
-    echo "✅ 转录完成，获取结果..."
+    echo "✅ 轉錄完成，取得結果..."
 
-    # 获取结果
+    # 取得結果
     RESULT_RESPONSE=$(curl -s -X GET "https://queue.fal.run/fal-ai/whisper/requests/$REQUEST_ID" \
       -H "Authorization: Key $FAL_KEY")
 
     echo "$RESULT_RESPONSE" > fal_result.json
-    echo "✅ 已保存 fal_result.json"
+    echo "✅ 已儲存 fal_result.json"
 
     # 显示统计
     CHUNK_COUNT=$(echo "$RESULT_RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('chunks',[])))" 2>/dev/null)
     TEXT_LEN=$(echo "$RESULT_RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('text','')))" 2>/dev/null)
-    echo "📝 识别到 $CHUNK_COUNT 个片段，共 $TEXT_LEN 字"
+    echo "📝 辨識到 $CHUNK_COUNT 個片段，共 $TEXT_LEN 字"
     exit 0
 
   elif [ "$STATUS" = "IN_QUEUE" ] || [ "$STATUS" = "IN_PROGRESS" ]; then
     echo -n "."
   else
     echo ""
-    echo "❌ 转录失败，状态: $STATUS"
+    echo "❌ 轉錄失敗，狀態: $STATUS"
     echo "$STATUS_RESPONSE"
     exit 1
   fi
 done
 
 echo ""
-echo "❌ 超时，任务未完成"
+echo "❌ 逾時，任務未完成"
 exit 1

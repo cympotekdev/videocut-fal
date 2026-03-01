@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * 从 fal.ai Whisper 结果生成字级别字幕
+ * 從 fal.ai Whisper 結果產生字級別字幕
  *
- * fal.ai Whisper 输出格式 (chunk_level=word):
+ * fal.ai Whisper 輸出格式 (chunk_level=word):
  * {
  *   "text": "全文",
  *   "chunks": [
@@ -13,7 +13,7 @@
  * }
  *
  * 用法: node generate_subtitles.js <fal_result.json> [delete_segments.json]
- * 输出: subtitles_words.json
+ * 輸出: subtitles_words.json
  */
 
 const fs = require('fs');
@@ -22,13 +22,13 @@ const resultFile = process.argv[2] || 'fal_result.json';
 const deleteFile = process.argv[3];
 
 if (!fs.existsSync(resultFile)) {
-  console.error('❌ 找不到文件:', resultFile);
+  console.error('❌ 找不到檔案:', resultFile);
   process.exit(1);
 }
 
 const result = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
 
-// 从 fal.ai Whisper 格式提取字级别数据
+// 從 fal.ai Whisper 格式擷取字級別資料
 const allWords = [];
 
 if (result.chunks && Array.isArray(result.chunks)) {
@@ -42,7 +42,7 @@ if (result.chunks && Array.isArray(result.chunks)) {
     }
   }
 } else if (result.utterances) {
-  // 兼容火山引擎格式（向后兼容）
+  // 相容火山引擎格式（向下相容）
   for (const utterance of result.utterances) {
     if (utterance.words) {
       for (const word of utterance.words) {
@@ -56,14 +56,14 @@ if (result.chunks && Array.isArray(result.chunks)) {
   }
 }
 
-console.log('原始字数:', allWords.length);
+console.log('原始字數:', allWords.length);
 
-// 如果有删除片段，映射时间
+// 如果有刪除片段，對映時間
 let outputWords = allWords;
 
 if (deleteFile && fs.existsSync(deleteFile)) {
   const deleteSegments = JSON.parse(fs.readFileSync(deleteFile, 'utf8'));
-  console.log('删除片段数:', deleteSegments.length);
+  console.log('刪除片段數:', deleteSegments.length);
 
   function getDeletedTimeBefore(time) {
     let deleted = 0;
@@ -95,10 +95,10 @@ if (deleteFile && fs.existsSync(deleteFile)) {
       });
     }
   }
-  console.log('映射后字数:', outputWords.length);
+  console.log('對映後字數:', outputWords.length);
 }
 
-// 添加空白标记（>0.5秒的静音按1秒拆分，便于精细控制）
+// 新增空白標記（>0.5秒的静音按1秒拆分，便于精细控制）
 const wordsWithGaps = [];
 let lastEnd = 0;
 
@@ -138,8 +138,8 @@ for (const word of outputWords) {
 }
 
 const gaps = wordsWithGaps.filter(w => w.isGap);
-console.log('总元素数:', wordsWithGaps.length);
-console.log('空白段数:', gaps.length);
+console.log('總元素數:', wordsWithGaps.length);
+console.log('空白段數:', gaps.length);
 
 fs.writeFileSync('subtitles_words.json', JSON.stringify(wordsWithGaps, null, 2));
-console.log('✅ 已保存 subtitles_words.json');
+console.log('✅ 已儲存 subtitles_words.json');
